@@ -54,7 +54,7 @@ inline u32 discretize_coord(f32 coord) {
 }
 
 
-void make_index(const vector<v2> &points, vector<u32> &zindex) {
+static void make_index(const vector<v2> &points, vector<u32> &zindex) {
     for (v2 p : points) {
         u32 x = discretize_coord(p.x);
         u32 y = discretize_coord(p.y);
@@ -67,7 +67,7 @@ void make_index(const vector<v2> &points, vector<u32> &zindex) {
 
 // partition the range into several subranges, where each subrange contains as
 // few coordinates as possible that are outside its rectangle
-void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
+static void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
                      vector<pair<u32,u32>> &ranges)
 {
     assert(xmin <= xmax);
@@ -80,7 +80,7 @@ void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
     // area we care about (which is the minimum bound)
     u32 zrange = max - min + 1;
     u32 area = (xmax - xmin + 1) * (ymax - ymin + 1);
-    if (zrange <= area + 3) {
+    if (zrange <= area + 16) {
         ranges.push_back(make_pair(min, max));
         return;
     }
@@ -120,7 +120,19 @@ void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
 }
 
 
-void area_lookup(const vector<u32> &zindex, v2 p0, v2 p1, vector<v2> &result) {
+static void debug_draw_range(pair<u32,u32> r) {
+    u32 zprev = r.first;
+    for (u32 z = zprev + 1; z <= r.second; zprev = z++) {
+        u32 x0 = deinterleave_x(zprev);
+        u32 y0 = deinterleave_y(zprev);
+        u32 x1 = deinterleave_x(z);
+        u32 y1 = deinterleave_y(z);
+        SDL_RenderDrawLine(renderer, x0*10, y0*10, x1*10, y1*10);
+    }
+}
+
+
+static void area_lookup(const vector<u32> &zindex, v2 p0, v2 p1, vector<v2> &result) {
     u32 xmin = discretize_coord(p0.x);
     u32 ymin = discretize_coord(p0.y);
     u32 xmax = discretize_coord(p1.x);
@@ -132,8 +144,14 @@ void area_lookup(const vector<u32> &zindex, v2 p0, v2 p1, vector<v2> &result) {
 
     vector<pair<u32,u32>> ranges;
     partition_range(xmin, ymin, xmax, ymax, ranges);
+    printf("range count: %d\n", (int)ranges.size());
 
+    u32 c = 0;
     for (auto r : ranges) {
+        c += 8;
+        SDL_SetRenderDrawColor(renderer, c, c, c, 255);
+        debug_draw_range(r);
+
         auto zindex_end = zindex.end();
         auto it = std::lower_bound(zindex.begin(), zindex_end, r.first);
 

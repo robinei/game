@@ -54,7 +54,7 @@ int main() {
         SDL_WINDOWPOS_UNDEFINED,
         1024,
         720,
-        0//SDL_WINDOW_ALLOW_HIGHDPI //SDL_WINDOW_OPENGL
+        SDL_WINDOW_ALLOW_HIGHDPI //SDL_WINDOW_OPENGL
     );
 
     if (!window) {
@@ -66,25 +66,11 @@ int main() {
 
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-
-    vector<u32> zvals;
-    for (u32 y = 0; y < 100; ++y) {
-        for (u32 x = 0; x < 100; ++x) {
-            u32 z = zorder::interleave(x, y);
-            zvals.push_back(z);
-        }
-    }
-    std::sort(zvals.begin(), zvals.end());
-    for (u32 i = 0; i + 1 < zvals.size(); ++i) {
-        u32 x0 = zorder::deinterleave_x(zvals[i]);
-        u32 y0 = zorder::deinterleave_y(zvals[i]);
-        u32 x1 = zorder::deinterleave_x(zvals[i + 1]);
-        u32 y1 = zorder::deinterleave_y(zvals[i + 1]);
-        SDL_RenderDrawLine(renderer, x0*10, y0*10, x1*10, y1*10);
-    }
+    zorder::debug_draw_range(make_pair(zorder::interleave(0, 0),
+                                       zorder::interleave(200, 130)));
 
     vector<v2> result;
-    zorder::area_lookup(zindex, v2{5, 5}, v2{9, 8}, result);
+    zorder::area_lookup(zindex, v2{5, 5}, v2{70, 40}, result);
 
     SDL_RenderPresent(renderer);
 
