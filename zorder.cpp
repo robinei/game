@@ -67,16 +67,17 @@ void make_index(const vector<v2> &points, vector<u32> &zindex) {
 
 // partition the range into several subranges, where each subrange contains as
 // few coordinates as possible that are outside its rectangle
-void partition_range(u32 min, u32 max, vector<pair<u32,u32>> &ranges) {
-    assert(min <= max);
-
-    u32 xmin = deinterleave_x(min);
-    u32 ymin = deinterleave_y(min);
-    u32 xmax = deinterleave_x(max);
-    u32 ymax = deinterleave_y(max);
+void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
+                     vector<pair<u32,u32>> &ranges)
+{
     assert(xmin <= xmax);
     assert(ymin <= ymax);
+    u32 min = interleave(xmin, ymin);
+    u32 max = interleave(xmax, ymax);
+    assert(min <= max);
 
+    // don't bother subdividing if the z-range is only slightly larger than the
+    // area we care about (which is the minimum bound)
     u32 zrange = max - min + 1;
     u32 area = (xmax - xmin + 1) * (ymax - ymin + 1);
     if (zrange <= area + 3) {
@@ -84,30 +85,38 @@ void partition_range(u32 min, u32 max, vector<pair<u32,u32>> &ranges) {
         return;
     }
 
-    u32 litmax, bigmin;
+    // calculate LITMAX and BIGMIN, which are the end and start respectively,
+    // of the less wasteful subranges (which we will try to partition in turn)
+    u32 litmax_x, litmax_y;
+    u32 bigmin_x, bigmin_y;
+
     u32 first_diffbit = highest_bit_position(min ^ max);
     if (first_diffbit & 1) {
         // highest differing bit is an y bit, so split along a horizontal line
         first_diffbit >>= 1;
         u32 diffmask = 0xffff >> (16 - first_diffbit - 1);
         u32 same_highbits = ~diffmask & ymin;
-        u32 litmax_y = same_highbits | (diffmask >> 1);
-        u32 bigmin_y = litmax_y + 1;
-        litmax = interleave(xmax, litmax_y);
-        bigmin = interleave(xmin, bigmin_y);
+
+        litmax_x = xmax;
+        litmax_y = same_highbits | (diffmask >> 1);
+
+        bigmin_x = xmin;
+        bigmin_y = litmax_y + 1;
     } else {
         // highest differing bit is an x bit, so split along a vertical line
         first_diffbit >>= 1;
         u32 diffmask = 0xffff >> (16 - first_diffbit - 1);
         u32 same_highbits = ~diffmask & xmin;
-        u32 litmax_x = same_highbits | (diffmask >> 1);
-        u32 bigmin_x = litmax_x + 1;
-        litmax = interleave(litmax_x, ymax);
-        bigmin = interleave(bigmin_x, ymin);
+        
+        litmax_x = same_highbits | (diffmask >> 1);
+        litmax_y = ymax;
+        
+        bigmin_x = litmax_x + 1;
+        bigmin_y = ymin;
     }
 
-    partition_range(min, litmax, ranges);
-    partition_range(bigmin, max, ranges);
+    partition_range(xmin, ymin, litmax_x, litmax_y, ranges);
+    partition_range(bigmin_x, bigmin_y, xmax, ymax, ranges);
 }
 
 
@@ -121,12 +130,8 @@ void area_lookup(const vector<u32> &zindex, v2 p0, v2 p1, vector<v2> &result) {
     assert(xmin <= xmax);
     assert(ymin <= ymax);
 
-    u32 min = interleave(xmin, ymin);
-    u32 max = interleave(xmax, ymax);
-    assert(min <= max);
-
     vector<pair<u32,u32>> ranges;
-    partition_range(min, max, ranges);
+    partition_range(xmin, ymin, xmax, ymax, ranges);
 
     for (auto r : ranges) {
         auto zindex_end = zindex.end();
