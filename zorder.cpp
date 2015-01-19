@@ -68,7 +68,7 @@ static void make_index(const vector<v2> &points, vector<u32> &zindex) {
 // partition the range into several subranges, where each subrange contains as
 // few coordinates as possible that are outside its rectangle
 static void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
-                     vector<pair<u32,u32>> &ranges)
+                            vector<pair<u32,u32>> &ranges)
 {
     assert(xmin <= xmax);
     assert(ymin <= ymax);
@@ -77,10 +77,10 @@ static void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
     assert(min <= max);
 
     // don't bother subdividing if the z-range is only slightly larger than the
-    // area we care about (which is the minimum bound)
+    // area we care about (which is the minimum bound for the z-range)
     u32 zrange = max - min + 1;
     u32 area = (xmax - xmin + 1) * (ymax - ymin + 1);
-    if (zrange <= area + 16) {
+    if (zrange <= (u32)(area * 1.1) + 4) {
         ranges.push_back(make_pair(min, max));
         return;
     }
@@ -142,27 +142,53 @@ static void area_lookup(const vector<u32> &zindex, v2 p0, v2 p1, vector<v2> &res
     assert(xmin <= xmax);
     assert(ymin <= ymax);
 
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    debug_draw_range(make_pair(interleave(xmin, ymin), interleave(xmax, ymax)));
+
     vector<pair<u32,u32>> ranges;
     partition_range(xmin, ymin, xmax, ymax, ranges);
+    std::sort(ranges.begin(), ranges.end());
     printf("range count: %d\n", (int)ranges.size());
 
-    u32 c = 0;
+    assert(!ranges.empty());
+    assert(ranges[0].second >= ranges[0].first);
+    for (u32 i = 1; i < ranges.size(); ++i) {
+        assert(ranges[i].second >= ranges[i].first);
+        assert(ranges[i].first > ranges[i-1].second);
+    }
+
+    u32 c = 21;
+    auto zsearch_start = zindex.begin();
+    auto zsearch_end = std::upper_bound(zindex.begin(), zindex.end(), ranges.back().second);
+
     for (auto r : ranges) {
-        c += 8;
+        //if (zsearch_start == zsearch_end)
+        //    break;
+
+        c += 21;
         SDL_SetRenderDrawColor(renderer, c, c, c, 255);
         debug_draw_range(r);
 
-        auto zindex_end = zindex.end();
-        auto it = std::lower_bound(zindex.begin(), zindex_end, r.first);
+        auto it = std::lower_bound(zsearch_start, zsearch_end, r.first);
 
-        for (; it != zindex_end && *it <= r.second; ++it) {
+        for (; it != zsearch_end && *it <= r.second; ++it) {
             u32 x = deinterleave_x(*it);
             u32 y = deinterleave_y(*it);
             if (x < xmin || y < ymin || x > xmax || y > ymax)
                 continue;
             printf("found: %d, %d\n", x, y);
         }
+
+        zsearch_start = it;
     }
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_Rect rect;
+    rect.x = xmin*10;
+    rect.y = ymin*10;
+    rect.w = (xmax+1)*10 - rect.x + 1;
+    rect.h = (ymax+1)*10 - rect.y + 1;
+    SDL_RenderDrawRect(renderer, &rect);
 }
 
 

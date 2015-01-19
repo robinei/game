@@ -1,10 +1,13 @@
-#include <vector>
 #include <cstdlib>
+#include <cstdio>
 #include <cassert>
 #include <cmath>
-#include <cstdio>
 #include <cstdint>
+
+#include <vector>
+#include <bitset>
 #include <algorithm>
+
 #include <SDL2/SDL.h>
 
 using std::vector;
@@ -28,11 +31,22 @@ static SDL_Renderer *renderer;
 
 #include "math.h"
 #include "zorder.cpp"
+#include "entity.cpp"
 
 
 
 
 int main() {
+    BitVector bits;
+    bits.set(50, true);
+    bits.set(125, true);
+    assert(bits.is_set(125));
+    bits.clear();
+    bits.set(51, true);
+    assert(!bits.is_set(50));
+    assert(!bits.is_set(125));
+    assert(bits.is_set(51));
+
     vector<v2> points {
         v2{6, 6},
         v2{20, 30},
@@ -70,7 +84,7 @@ int main() {
                                        zorder::interleave(200, 130)));
 
     vector<v2> result;
-    zorder::area_lookup(zindex, v2{5, 5}, v2{70, 40}, result);
+    zorder::area_lookup(zindex, v2{4, 4}, v2{127, 100}, result);
 
     SDL_RenderPresent(renderer);
 
