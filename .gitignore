@@ -1,1 +1,5 @@
 game
+game.sublime-workspace
+*.manifest
+*.exe
+*.obj

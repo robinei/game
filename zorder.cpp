@@ -120,6 +120,8 @@ static void partition_range(u32 xmin, u32 ymin, u32 xmax, u32 ymax,
 }
 
 
+static const u32 gridDim = 5;
+
 static void debug_draw_range(pair<u32,u32> r) {
     u32 zprev = r.first;
     for (u32 z = zprev + 1; z <= r.second; zprev = z++) {
@@ -127,7 +129,7 @@ static void debug_draw_range(pair<u32,u32> r) {
         u32 y0 = deinterleave_y(zprev);
         u32 x1 = deinterleave_x(z);
         u32 y1 = deinterleave_y(z);
-        SDL_RenderDrawLine(renderer, x0*10, y0*10, x1*10, y1*10);
+        SDL_RenderDrawLine(renderer, x0*gridDim, y0*gridDim, x1*gridDim, y1*gridDim);
     }
 }
 
@@ -176,7 +178,7 @@ static void area_lookup(const vector<u32> &zindex, v2 p0, v2 p1, vector<v2> &res
             u32 y = deinterleave_y(*it);
             if (x < xmin || y < ymin || x > xmax || y > ymax)
                 continue;
-            printf("found: %d, %d\n", x, y);
+            //printf("found: %d, %d\n", x, y);
         }
 
         zsearch_start = it;
@@ -184,10 +186,10 @@ static void area_lookup(const vector<u32> &zindex, v2 p0, v2 p1, vector<v2> &res
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect rect;
-    rect.x = xmin*10;
-    rect.y = ymin*10;
-    rect.w = (xmax+1)*10 - rect.x + 1;
-    rect.h = (ymax+1)*10 - rect.y + 1;
+    rect.x = xmin*gridDim;
+    rect.y = ymin*gridDim;
+    rect.w = (xmax+1)*gridDim - rect.x + 1;
+    rect.h = (ymax+1)*gridDim - rect.y + 1;
     SDL_RenderDrawRect(renderer, &rect);
 }
 

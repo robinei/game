@@ -1,0 +1,11 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": ".",
+            "file_exclude_patterns": ["*.manifest"],
+            "folder_exclude_patterns": ["win32_deps"]
+		}
+	]
+}
