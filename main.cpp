@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cassert>
 #include <cmath>
+#include <cfloat>
 #include <cstdint>
 
 #include <vector>
@@ -47,15 +48,6 @@ int main(int argc, char *args[]) {
     assert(!bits.is_set(125));
     assert(bits.is_set(51));
 
-    vector<v2> points {
-        v2{6, 6},
-        v2{20, 30},
-        v2{20, 40}
-    };
-    
-    vector<u32> zindex;
-    zorder::make_index(points, zindex);
-
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0){
         printf("SDL_Init Error: %s\n", SDL_GetError());
@@ -78,11 +70,27 @@ int main(int argc, char *args[]) {
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    bool dragging = false;
-    int orig_x, orig_y;
+    //bool dragging = false;
+    //int orig_x, orig_y;
 
-    v2 p0{4, 4};
+    v2 p0{8, 8};
     v2 p1{127, 100};
+
+    vector<v2> points {
+        v2{0, 0},
+        v2{6, 6},
+        v2{20, 30},
+        v2{20, 40},
+        v2{65535, 65535},
+    };
+
+    printf("\n");    
+    zorder::ZOrderIndex zindex;
+    zindex.make_index(points);
+
+    printf("\n");
+    vector<u32> result;
+    zindex.area_lookup(p0, p1, result);
 
     bool quit = false;
     while (!quit) {
@@ -98,7 +106,7 @@ int main(int argc, char *args[]) {
         } while (SDL_PollEvent(&event));
 
 
-        if (!dragging && (SDL_GetMouseState(&orig_x, &orig_y) & SDL_BUTTON(SDL_BUTTON_LEFT))) {
+        /*if (!dragging && (SDL_GetMouseState(&orig_x, &orig_y) & SDL_BUTTON(SDL_BUTTON_LEFT))) {
             if (orig_x > 0 && orig_y > 0)
                 dragging = true;
         }
@@ -114,17 +122,14 @@ int main(int argc, char *args[]) {
             } else {
                 dragging = false;
             }
-        }
+        }*/
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        /*SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         zorder::debug_draw_range(make_pair(zorder::interleave(0, 0),
-                                           zorder::interleave(200, 130)));
-
-        vector<v2> result;
-        zorder::area_lookup(zindex, p0, p1, result);
+                                           zorder::interleave(200, 130)));*/
 
         SDL_RenderPresent(renderer);
     }
